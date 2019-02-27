@@ -1,4 +1,5 @@
-(ns tournament-gen.core)
+(ns tournament-gen.core
+  (:require [clojure.set :as set]))
 
 (defn rotate [n ps]
   (concat (drop n ps) (take n ps)))
@@ -23,7 +24,7 @@
 
 (defn verify [size gs]
   (apply merge-with
-         clojure.set/union
+         set/union
          (for [game (mapcat (partial partition size) gs)]
            (set->map (set game)))))
 
@@ -43,3 +44,49 @@
 
 (defn rounds-diag [size n ps]
   (take n (iterate #(rotate 2 (match-up (vert % (Math/floorDiv (count ps) size)))) ps)))
+
+(defn empty-matched [ps]
+  (into {} (for [p ps] [p #{p}])))
+
+(defn merge-placed [idx placed ps]
+  (let [pset (set (cons idx ps))]
+    (->> (filter pset (keys placed))
+         (reduce #(update %1 %2 set/union pset) placed))))
+
+(defn round-matched [size ps matched]
+  (loop [idx 0
+         pset (set/difference (set ps) (matched idx))
+         placed matched
+         round (empty-matched ps)]
+    (println "\nidx" idx)
+    (println "pset" pset)
+    (println "placed" placed)
+    (println "round" round)
+    (cond
+      (= idx (count ps)) (distinct (vals round))
+      (< (count (round idx)) size) (let [opts (map placed pset)
+                                         to-place (take (dec size) pset)
+                                         new-placed (merge-placed idx placed to-place)]
+                                     (println "opts" opts)
+                                     (println "to-place" to-place)
+                                     (println "new-placed" new-placed)
+                                     (recur (inc idx)
+                                            (set/difference (set ps) (new-placed (inc idx)))
+                                            new-placed
+                                            (merge-placed idx round to-place)))
+      :else (recur (inc idx)
+                   (set/difference (set ps) (placed (inc idx)))
+                   placed
+                   round))))
+
+(defn rounds-tracked [size n ps]
+  (loop [idx n
+         matched (empty-matched ps)
+         rounds []]
+    (if (zero? idx)
+      rounds
+      (let [round (round-matched size ps matched)]
+        (recur
+          (dec idx)
+          (merge-with set/union matched (verify size [round]))
+          (conj rounds round))))))
