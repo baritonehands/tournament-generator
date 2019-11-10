@@ -1,14 +1,16 @@
 # tournament-gen
 
-A Clojure library designed to ... well, that part is up to you.
+Attempt at tournament generation for 4 player competitive game.
 
 ## Usage
 
-FIXME
+Requires leiningen and Java JDK v8+.
+
+    lein run
 
 ## License
 
-Copyright © 2017 FIXME
+Copyright © 2019 Brian Gregg
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
